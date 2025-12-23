@@ -22,6 +22,8 @@ body {
     color: var(--text-color);
     overflow-x: hidden;
     line-height: 1.6;
+    background: radial-gradient(circle at 50% 50%, #112240 0%, #0a192f 100%);
+}
 }
 
 /* --- Custom Cursor --- */
@@ -209,18 +211,20 @@ a { text-decoration: none; color: inherit; cursor: none; }
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 2rem;
 }
-.project-card {
-    background: var(--light-bg);
+.project-card, .skill-card {
+    background: rgba(17, 34, 64, 0.6);
     border-radius: 8px;
-    overflow: hidden;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(100, 255, 218, 0.1);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     transition: var(--transition);
-    position: relative;
 }
-.project-card:hover { transform: translateY(-10px); }
-.card-image {
-    height: 150px;
-    background: #172a45;
-    display: flex; align-items: center; justify-content: center;
+
+.project-card:hover, .skill-card:hover {
+    transform: translateY(-10px);
+    border-color: var(--primary);
+    background: rgba(17, 34, 64, 0.8);
+    box-shadow: 0 0 20px rgba(100, 255, 218, 0.2);
 }
 .project-icon-placeholder { font-size: 3rem; color: var(--secondary); opacity: 0.5; }
 .card-content { padding: 1.5rem; }
