@@ -44,47 +44,89 @@ function initThreeJS() {
     container.appendChild(renderer.domElement);
 
     // Create Particles
-    const particlesGeometry = new THREE.BufferGeometry();
-    const particlesCount = 2000; // Optimal for performance
-    const posArray = new Float32Array(particlesCount * 3);
+    const particleCount = 100; // Fewer particles, but connected
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const velocities = [];
 
-    for(let i = 0; i < particlesCount * 3; i++) {
-        posArray[i] = (Math.random() - 0.5) * 15; // Spread
+    for(let i = 0; i < particleCount * 3; i++) {
+        positions[i] = (Math.random() - 0.5) * 15; // Spread
+        velocities.push((Math.random() - 0.5) * 0.02); // Random movement speed
     }
 
-    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-
-    const material = new THREE.PointsMaterial({
-        size: 0.02,
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    // Material for Dots
+    const particlesMaterial = new THREE.PointsMaterial({
         color: 0x64ffda,
+        size: 0.05,
         transparent: true,
         opacity: 0.8
     });
 
-    const particlesMesh = new THREE.Points(particlesGeometry, material);
+    const particlesMesh = new THREE.Points(geometry, particlesMaterial);
     scene.add(particlesMesh);
 
-    camera.position.z = 3;
-
-    // Mouse Interaction
-    let mouseX = 0;
-    let mouseY = 0;
-
-    document.addEventListener('mousemove', (event) => {
-        mouseX = event.clientX / window.innerWidth - 0.5;
-        mouseY = event.clientY / window.innerHeight - 0.5;
+    // Lines Material
+    const lineMaterial = new THREE.LineBasicMaterial({
+        color: 0x64ffda,
+        transparent: true,
+        opacity: 0.15
     });
+
+    camera.position.z = 3;
 
     // Animation Loop
     const animate = () => {
         requestAnimationFrame(animate);
 
-        particlesMesh.rotation.y += 0.001;
-        particlesMesh.rotation.x += 0.001;
+        const positions = particlesMesh.geometry.attributes.position.array;
 
-        // Interactive movement
-        particlesMesh.rotation.y += 0.05 * (mouseX - particlesMesh.rotation.y);
-        particlesMesh.rotation.x += 0.05 * (mouseY - particlesMesh.rotation.x);
+        // Move Particles
+        for(let i = 0; i < particleCount; i++) {
+            // Update X, Y, Z
+            positions[i*3] += velocities[i];     // X
+            positions[i*3+1] += velocities[i];   // Y
+            
+            // Boundary Check (Bounce back)
+            if(positions[i*3] > 7 || positions[i*3] < -7) velocities[i] = -velocities[i];
+            if(positions[i*3+1] > 4 || positions[i*3+1] < -4) velocities[i] = -velocities[i];
+        }
+        particlesMesh.geometry.attributes.position.needsUpdate = true;
+
+        // Draw Connecting Lines
+        // Remove old lines
+        scene.children.forEach(child => {
+            if (child.type === "LineSegments") scene.remove(child);
+        });
+
+        const lineGeometry = new THREE.BufferGeometry();
+        const linePositions = [];
+
+        // Connect particles that are close
+        for (let i = 0; i < particleCount; i++) {
+            for (let j = i + 1; j < particleCount; j++) {
+                const dist = Math.sqrt(
+                    Math.pow(positions[i*3] - positions[j*3], 2) +
+                    Math.pow(positions[i*3+1] - positions[j*3+1], 2) +
+                    Math.pow(positions[i*3+2] - positions[j*3+2], 2)
+                );
+
+                if (dist < 1.5) { // Threshold for connection
+                    linePositions.push(
+                        positions[i*3], positions[i*3+1], positions[i*3+2],
+                        positions[j*3], positions[j*3+1], positions[j*3+2]
+                    );
+                }
+            }
+        }
+
+        lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+        const lines = new THREE.LineSegments(lineGeometry, lineMaterial);
+        scene.add(lines);
+
+        // Gentle rotation
+        scene.rotation.y += 0.001;
 
         renderer.render(scene, camera);
     };
